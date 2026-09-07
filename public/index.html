@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CoMote Particles</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="interface">
+
+        <div class="title">
+            <h1>CoMote / Particles</h1>
+
+            <div id="connectionStatus" class="disconnected">
+                ○ DÉCONNECTÉ
+            </div>
+        </div>
+
+        <div class="controls">
+
+            <label>WebSocket</label>
+
+            <input id="wsUrl" type="text">
+
+            <button id="connectButton">
+                CONNECTER
+            </button>
+
+        </div>
+
+        <div class="sensor-panel">
+
+            <div>
+                <span>AX</span>
+                <strong id="ax">0.000</strong>
+            </div>
+
+            <div>
+                <span>AY</span>
+                <strong id="ay">0.000</strong>
+            </div>
+
+            <div>
+                <span>AZ</span>
+                <strong id="az">0.000</strong>
+            </div>
+
+            <div>
+                <span>GX</span>
+                <strong id="gx">0.000</strong>
+            </div>
+
+            <div>
+                <span>GY</span>
+                <strong id="gy">0.000</strong>
+            </div>
+
+            <div>
+                <span>GZ</span>
+                <strong id="gz">0.000</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
+
+    <script src="sketch.js"></script>
+
+</body>
+
+</html>

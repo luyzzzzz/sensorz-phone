@@ -1,0 +1,172 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background: #050508;
+    color: white;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+/* Canvas p5.js */
+
+canvas {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    z-index: 0;
+}
+
+
+/* Interface */
+
+#interface {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+
+    z-index: 10;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    pointer-events: none;
+}
+
+
+/* Titre */
+
+.title {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+
+    font-size: 18px;
+
+    font-weight: 400;
+
+    letter-spacing: 0.08em;
+}
+
+
+/* Statut WebSocket */
+
+#connectionStatus {
+    font-size: 12px;
+
+    letter-spacing: 0.1em;
+}
+
+.connected {
+    color: #7cffb2;
+}
+
+.disconnected {
+    color: #777;
+}
+
+
+/* Contrôles */
+
+.controls {
+    margin-top: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    pointer-events: auto;
+}
+
+.controls label {
+    font-size: 11px;
+
+    opacity: 0.6;
+}
+
+.controls input {
+    width: 280px;
+
+    padding: 7px 10px;
+
+    background: rgba(0, 0, 0, 0.5);
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    color: white;
+
+    font-family: monospace;
+}
+
+.controls button {
+    padding: 8px 14px;
+
+    background: rgba(255, 255, 255, 0.1);
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+
+    color: white;
+
+    cursor: pointer;
+}
+
+.controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+
+/* Valeurs des capteurs */
+
+.sensor-panel {
+    margin-top: 20px;
+
+    display: flex;
+
+    gap: 20px;
+
+    opacity: 0.65;
+}
+
+.sensor-panel div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.sensor-panel span {
+    font-size: 9px;
+
+    opacity: 0.5;
+}
+
+.sensor-panel strong {
+    font-family: monospace;
+
+    font-size: 12px;
+
+    font-weight: normal;
+}
