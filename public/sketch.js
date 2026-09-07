@@ -1,26 +1,10 @@
+let sensor;
 let particles = [];
 
-const PARTICLE_COUNT = 180;
-
-let sensor = {
-    ax: 0,
-    ay: 0,
-    az: 0,
-
-    gx: 0,
-    gy: 0,
-    gz: 0
-};
+let interactionActive = false;
+let interactionAmount = 0;
 
 let socket = null;
-
-let targetX;
-let targetY;
-
-let sensorX;
-let sensorY;
-
-let energy = 0;
 
 
 // ==========================================
@@ -29,47 +13,77 @@ let energy = 0;
 
 function setup() {
 
-    createCanvas(windowWidth, windowHeight);
-
-    targetX = width / 2;
-    targetY = height / 2;
-
-    sensorX = width / 2;
-    sensorY = height / 2;
-
-    createParticles();
-
-    setupWebSocket();
-
-}
+    createCanvas(
+        windowWidth,
+        windowHeight
+    );
 
 
-// ==========================================
-// PARTICULES
-// ==========================================
+    sensor = {
 
-function createParticles() {
+        x: width / 2,
+        y: height / 2,
 
-    particles = [];
+        vx: 0,
+        vy: 0,
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        ax: 0,
+        ay: 0,
+        az: 0,
+
+        gx: 0,
+        gy: 0,
+        gz: 0
+    };
+
+
+    // ======================================
+    // Création du nuage
+    // ======================================
+
+    for (let i = 0; i < 120; i++) {
 
         particles.push({
 
-            x: random(width),
-            y: random(height),
+            angle:
+                random(TWO_PI),
 
-            vx: random(-1, 1),
-            vy: random(-1, 1),
+            radius:
+                random(8, 22) +
+                randomGaussian() * 3,
 
-            size: random(2, 7),
+            noiseX:
+                random(1000),
 
-            noiseOffset: random(1000)
+            noiseY:
+                random(1000),
+
+            size:
+                random(1.2, 3),
+
+            alpha:
+                random(40, 90)
 
         });
 
     }
 
+
+    noStroke();
+
+
+    // ======================================
+    // WebSocket
+    // ======================================
+
+    setupWebSocket();
+
+
+    // ======================================
+    // Interaction
+    // ======================================
+
+    setupInteraction();
 }
 
 
@@ -79,18 +93,73 @@ function createParticles() {
 
 function draw() {
 
-    background(5, 5, 8);
+    // ======================================
+    // Transition douce ON / OFF
+    // ======================================
+
+    if (interactionActive) {
+
+        interactionAmount = lerp(
+            interactionAmount,
+            1,
+            0.05
+        );
+
+    } else {
+
+        interactionAmount = lerp(
+            interactionAmount,
+            0,
+            0.05
+        );
+
+    }
+
+
+    // ======================================
+    // Fond
+    // ======================================
+
+    const activeAlpha =
+        lerp(45, 18, interactionAmount);
+
+    const activeRed =
+        lerp(5, 10, interactionAmount);
+
+    const activeGreen =
+        lerp(5, 20, interactionAmount);
+
+    const activeBlue =
+        lerp(8, 60, interactionAmount);
+
+
+    background(
+        activeRed,
+        activeGreen,
+        activeBlue,
+        activeAlpha
+    );
+
+
+    // ======================================
+    // Mise à jour du capteur
+    // ======================================
 
     updateSensor();
 
-    updateParticles();
 
-    drawParticles();
+    // ======================================
+    // Nuage
+    // ======================================
 
     drawSensor();
 
-    updateInterface();
 
+    // ======================================
+    // Interface
+    // ======================================
+
+    updateInterface();
 }
 
 
@@ -100,272 +169,265 @@ function draw() {
 
 function updateSensor() {
 
-    /*
-        Pour l'instant, on utilise
-        l'accéléromètre comme force
-        de déplacement.
+    const easing = 0.08;
 
-        AX → déplacement horizontal
-        AY → déplacement vertical
+
+    /*
+        Quand l'interaction est OFF :
+        le téléphone peut continuer à envoyer
+        des données, mais elles ne déplacent
+        pas le nuage.
     */
 
-    targetX += sensor.ax * 8;
-    targetY += sensor.ay * 8;
+    if (!interactionActive) {
 
-    targetX = constrain(
-        targetX,
+        sensor.vx = 0;
+        sensor.vy = 0;
+
+        return;
+    }
+
+
+    // ======================================
+    // Position cible
+    // ======================================
+
+    const targetX =
+        width / 2 +
+        sensor.ax *
+        width *
+        0.08;
+
+
+    const targetY =
+        height / 2 +
+        sensor.ay *
+        height *
+        0.08;
+
+
+    // ======================================
+    // Lissage
+    // ======================================
+
+    sensor.vx =
+        (targetX - sensor.x) *
+        easing;
+
+    sensor.vy =
+        (targetY - sensor.y) *
+        easing;
+
+
+    sensor.x +=
+        sensor.vx *
+        interactionAmount;
+
+    sensor.y +=
+        sensor.vy *
+        interactionAmount;
+
+
+    // ======================================
+    // Limites
+    // ======================================
+
+    sensor.x = constrain(
+        sensor.x,
         0,
         width
     );
 
-    targetY = constrain(
-        targetY,
+    sensor.y = constrain(
+        sensor.y,
         0,
         height
     );
-
-
-    /*
-        Lissage du mouvement
-    */
-
-    sensorX = lerp(
-        sensorX,
-        targetX,
-        0.08
-    );
-
-    sensorY = lerp(
-        sensorY,
-        targetY,
-        0.08
-    );
-
-
-    /*
-        Calcul d'une énergie globale
-    */
-
-    energy =
-
-        abs(sensor.ax) +
-        abs(sensor.ay) +
-        abs(sensor.az) +
-
-        abs(sensor.gx) * 0.1 +
-        abs(sensor.gy) * 0.1 +
-        abs(sensor.gz) * 0.1;
-
 }
 
 
 // ==========================================
-// PARTICULES UPDATE
-// ==========================================
-
-function updateParticles() {
-
-    for (let p of particles) {
-
-        /*
-            Mouvement naturel
-        */
-
-        let angle = noise(
-            p.noiseOffset,
-            frameCount * 0.003
-        ) * TWO_PI * 2;
-
-        p.vx += cos(angle) * 0.02;
-        p.vy += sin(angle) * 0.02;
-
-
-        /*
-            Influence du téléphone
-        */
-
-        let dx = sensorX - p.x;
-        let dy = sensorY - p.y;
-
-        let distance = sqrt(
-            dx * dx +
-            dy * dy
-        );
-
-        if (distance > 1) {
-
-            let force = 0.02;
-
-            p.vx += dx / distance * force;
-            p.vy += dy / distance * force;
-
-        }
-
-
-        /*
-            Gyroscope Z :
-            rotation du champ
-        */
-
-        let rotationForce = sensor.gz * 0.0005;
-
-        p.vx += -dy * rotationForce;
-        p.vy += dx * rotationForce;
-
-
-        /*
-            Friction
-        */
-
-        p.vx *= 0.985;
-        p.vy *= 0.985;
-
-
-        /*
-            Position
-        */
-
-        p.x += p.vx;
-        p.y += p.vy;
-
-
-        /*
-            Rebonds sur les bords
-        */
-
-        if (p.x < 0) {
-
-            p.x = 0;
-            p.vx *= -0.8;
-
-        }
-
-        if (p.x > width) {
-
-            p.x = width;
-            p.vx *= -0.8;
-
-        }
-
-        if (p.y < 0) {
-
-            p.y = 0;
-            p.vy *= -0.8;
-
-        }
-
-        if (p.y > height) {
-
-            p.y = height;
-            p.vy *= -0.8;
-
-        }
-
-    }
-
-}
-
-
-// ==========================================
-// DRAW PARTICULES
-// ==========================================
-
-function drawParticles() {
-
-    noStroke();
-
-    for (let p of particles) {
-
-        let dynamicSize =
-
-            p.size +
-
-            energy * 1.5;
-
-
-        let alpha =
-
-            80 +
-
-            min(
-                energy * 20,
-                160
-            );
-
-
-        fill(
-            255,
-            255,
-            255,
-            alpha
-        );
-
-
-        circle(
-            p.x,
-            p.y,
-            dynamicSize
-        );
-
-    }
-
-}
-
-
-// ==========================================
-// CENTRE DU CAPTEUR
+// DRAW SENSOR / PARTICULES
 // ==========================================
 
 function drawSensor() {
 
-    /*
-        Cercle central représentant
-        la position du téléphone.
-    */
+    const t =
+        millis() * 0.0004;
 
-    let radius =
 
-        20 +
+    for (let p of particles) {
 
-        energy * 5;
 
-    noFill();
+        // ==================================
+        // Micro-frémissement
+        // ==================================
 
-    stroke(
-        255,
-        255,
-        255,
-        80
+        const driftX = map(
+
+            noise(
+                p.noiseX + t
+            ),
+
+            0,
+            1,
+
+            -4,
+            4
+        );
+
+
+        const driftY = map(
+
+            noise(
+                p.noiseY + t
+            ),
+
+            0,
+            1,
+
+            -4,
+            4
+        );
+
+
+        // ==================================
+        // Rotation gyroscope
+        // ==================================
+
+        const rotation =
+            sensor.gz *
+            0.002 *
+            interactionAmount;
+
+
+        const currentAngle =
+            p.angle +
+            rotation;
+
+
+        // ==================================
+        // Position
+        // ==================================
+
+        const x =
+            sensor.x +
+            cos(currentAngle) *
+            p.radius +
+            driftX;
+
+
+        const y =
+            sensor.y +
+            sin(currentAngle) *
+            p.radius +
+            driftY;
+
+
+        // ==================================
+        // Couleur / intensité
+        // ==================================
+
+        const onRed =
+            lerp(
+                220,
+                255,
+                interactionAmount
+            );
+
+        const onGreen =
+            lerp(
+                225,
+                220,
+                interactionAmount
+            );
+
+        const onBlue =
+            lerp(
+                230,
+                170,
+                interactionAmount
+            );
+
+
+        const particleAlpha =
+            lerp(
+                p.alpha * 0.6,
+                p.alpha * 3,
+                interactionAmount
+            );
+
+
+        fill(
+            onRed,
+            onGreen,
+            onBlue,
+            particleAlpha
+        );
+
+
+        circle(
+            x,
+            y,
+            p.size
+        );
+    }
+}
+
+
+// ==========================================
+// INTERACTION ON / OFF
+// ==========================================
+
+function setupInteraction() {
+
+    const button =
+        document.getElementById(
+            "interactionButton"
+        );
+
+
+    button.addEventListener(
+        "click",
+        function() {
+
+            interactionActive =
+                !interactionActive;
+
+
+            updateInteractionButton();
+
+        }
     );
-
-    strokeWeight(1);
-
-    circle(
-        sensorX,
-        sensorY,
-        radius
-    );
+}
 
 
-    /*
-        Point central
-    */
+// ==========================================
+// BOUTON INTERACTION
+// ==========================================
 
-    noStroke();
+function updateInteractionButton() {
 
-    fill(
-        255,
-        255,
-        255,
-        180
-    );
+    const button =
+        document.getElementById(
+            "interactionButton"
+        );
 
-    circle(
-        sensorX,
-        sensorY,
-        5
-    );
 
+    if (interactionActive) {
+
+        button.textContent = "ON";
+
+        button.className =
+            "interaction-on";
+
+    } else {
+
+        button.textContent = "OFF";
+
+        button.className =
+            "interaction-off";
+    }
 }
 
 
@@ -376,15 +438,15 @@ function drawSensor() {
 function setupWebSocket() {
 
     const input =
-        document.getElementById("wsUrl");
+        document.getElementById(
+            "wsUrl"
+        );
 
     const button =
-        document.getElementById("connectButton");
+        document.getElementById(
+            "connectButton"
+        );
 
-
-    /*
-        Adresse par défaut
-    */
 
     input.value =
         `ws://${window.location.hostname}:8080`;
@@ -394,21 +456,33 @@ function setupWebSocket() {
         "click",
         connectWebSocket
     );
-
 }
 
 
 // ==========================================
-// CONNEXION
+// CONNEXION WEBSOCKET
 // ==========================================
 
 function connectWebSocket() {
 
     const input =
-        document.getElementById("wsUrl");
+        document.getElementById(
+            "wsUrl"
+        );
+
 
     const url =
         input.value.trim();
+
+
+    if (!url) {
+
+        console.error(
+            "Adresse WebSocket vide."
+        );
+
+        return;
+    }
 
 
     if (socket) {
@@ -428,17 +502,17 @@ function connectWebSocket() {
         new WebSocket(url);
 
 
-    socket.onopen = function() {
+    socket.onopen =
+        function() {
 
-        console.log(
-            "WebSocket connecté"
-        );
+            console.log(
+                "WebSocket connecté"
+            );
 
-        setConnectionStatus(
-            true
-        );
-
-    };
+            setConnectionStatus(
+                true
+            );
+        };
 
 
     socket.onmessage =
@@ -449,10 +523,10 @@ function connectWebSocket() {
                 event.data
             );
 
+
             receiveCoMote(
                 event.data
             );
-
         };
 
 
@@ -467,7 +541,6 @@ function connectWebSocket() {
             setConnectionStatus(
                 false
             );
-
         };
 
 
@@ -481,9 +554,7 @@ function connectWebSocket() {
             setConnectionStatus(
                 false
             );
-
         };
-
 }
 
 
@@ -495,14 +566,13 @@ function receiveCoMote(message) {
 
     let data;
 
+
     try {
 
         data =
             JSON.parse(message);
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.log(
             "Message non JSON :",
@@ -510,13 +580,12 @@ function receiveCoMote(message) {
         );
 
         return;
-
     }
 
 
-    /*
-        Format accélération
-    */
+    // ======================================
+    // Accéléromètre
+    // ======================================
 
     if (data.accelerometer) {
 
@@ -534,13 +603,12 @@ function receiveCoMote(message) {
             Number(
                 data.accelerometer.z || 0
             );
-
     }
 
 
-    /*
-        Format gyroscope
-    */
+    // ======================================
+    // Gyroscope
+    // ======================================
 
     if (data.gyroscope) {
 
@@ -558,13 +626,12 @@ function receiveCoMote(message) {
             Number(
                 data.gyroscope.z || 0
             );
-
     }
 
 
-    /*
-        Format plat
-    */
+    // ======================================
+    // Format plat accélération
+    // ======================================
 
     if (
         data.ax !== undefined ||
@@ -580,9 +647,12 @@ function receiveCoMote(message) {
 
         sensor.az =
             Number(data.az || 0);
-
     }
 
+
+    // ======================================
+    // Format plat gyroscope
+    // ======================================
 
     if (
         data.gx !== undefined ||
@@ -598,14 +668,12 @@ function receiveCoMote(message) {
 
         sensor.gz =
             Number(data.gz || 0);
-
     }
-
 }
 
 
 // ==========================================
-// INTERFACE
+// INTERFACE CAPTEURS
 // ==========================================
 
 function updateInterface() {
@@ -614,9 +682,11 @@ function updateInterface() {
         .textContent =
         sensor.ax.toFixed(3);
 
+
     document.getElementById("ay")
         .textContent =
         sensor.ay.toFixed(3);
+
 
     document.getElementById("az")
         .textContent =
@@ -627,14 +697,15 @@ function updateInterface() {
         .textContent =
         sensor.gx.toFixed(3);
 
+
     document.getElementById("gy")
         .textContent =
         sensor.gy.toFixed(3);
 
+
     document.getElementById("gz")
         .textContent =
         sensor.gz.toFixed(3);
-
 }
 
 
@@ -660,18 +731,14 @@ function setConnectionStatus(
         element.className =
             "connected";
 
-    }
-
-    else {
+    } else {
 
         element.textContent =
             "○ DÉCONNECTÉ";
 
         element.className =
             "disconnected";
-
     }
-
 }
 
 
@@ -685,5 +752,4 @@ function windowResized() {
         windowWidth,
         windowHeight
     );
-
 }

@@ -4,11 +4,17 @@
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>CoMote Particles</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 </head>
 
 <body>
@@ -16,24 +22,50 @@
     <div id="interface">
 
         <div class="title">
+
             <h1>CoMote / Particles</h1>
 
-            <div id="connectionStatus" class="disconnected">
+            <div
+                id="connectionStatus"
+                class="disconnected"
+            >
                 ○ DÉCONNECTÉ
             </div>
+
         </div>
+
 
         <div class="controls">
 
-            <label>WebSocket</label>
+            <label for="wsUrl">
+                WebSocket
+            </label>
 
-            <input id="wsUrl" type="text">
+            <input
+                id="wsUrl"
+                type="text"
+            >
 
             <button id="connectButton">
                 CONNECTER
             </button>
 
         </div>
+
+
+        <div class="interaction-control">
+
+            <span>INTERACTION</span>
+
+            <button
+                id="interactionButton"
+                class="interaction-off"
+            >
+                OFF
+            </button>
+
+        </div>
+
 
         <div class="sensor-panel">
 
@@ -70,6 +102,7 @@
         </div>
 
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
 

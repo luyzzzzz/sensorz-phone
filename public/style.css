@@ -17,7 +17,10 @@ body {
         sans-serif;
 }
 
-/* Canvas p5.js */
+
+/* ==========================================
+   CANVAS
+   ========================================== */
 
 canvas {
     position: fixed;
@@ -29,7 +32,9 @@ canvas {
 }
 
 
-/* Interface */
+/* ==========================================
+   INTERFACE
+   ========================================== */
 
 #interface {
     position: fixed;
@@ -49,7 +54,9 @@ canvas {
 }
 
 
-/* Titre */
+/* ==========================================
+   TITRE
+   ========================================== */
 
 .title {
     display: flex;
@@ -69,7 +76,9 @@ h1 {
 }
 
 
-/* Statut WebSocket */
+/* ==========================================
+   STATUT WEBSOCKET
+   ========================================== */
 
 #connectionStatus {
     font-size: 12px;
@@ -86,7 +95,9 @@ h1 {
 }
 
 
-/* Contrôles */
+/* ==========================================
+   CONTROLES WEBSOCKET
+   ========================================== */
 
 .controls {
     margin-top: 20px;
@@ -111,6 +122,8 @@ h1 {
 
     padding: 7px 10px;
 
+    box-sizing: border-box;
+
     background: rgba(0, 0, 0, 0.5);
 
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -118,14 +131,23 @@ h1 {
     color: white;
 
     font-family: monospace;
+
+    outline: none;
+}
+
+.controls input:focus {
+    border-color:
+        rgba(255, 255, 255, 0.5);
 }
 
 .controls button {
     padding: 8px 14px;
 
-    background: rgba(255, 255, 255, 0.1);
+    background:
+        rgba(255, 255, 255, 0.1);
 
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border:
+        1px solid rgba(255, 255, 255, 0.3);
 
     color: white;
 
@@ -133,11 +155,80 @@ h1 {
 }
 
 .controls button:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background:
+        rgba(255, 255, 255, 0.2);
 }
 
 
-/* Valeurs des capteurs */
+/* ==========================================
+   INTERACTION ON / OFF
+   ========================================== */
+
+.interaction-control {
+    margin-top: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    pointer-events: auto;
+}
+
+.interaction-control span {
+    font-size: 11px;
+
+    letter-spacing: 0.1em;
+
+    opacity: 0.6;
+}
+
+#interactionButton {
+    min-width: 60px;
+
+    padding: 7px 12px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.25);
+
+    background:
+        rgba(255, 255, 255, 0.06);
+
+    color: white;
+
+    font-family: monospace;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#interactionButton:hover {
+    background:
+        rgba(255, 255, 255, 0.14);
+}
+
+#interactionButton.interaction-off {
+    opacity: 0.55;
+}
+
+#interactionButton.interaction-on {
+    opacity: 1;
+
+    border-color:
+        rgba(124, 255, 178, 0.6);
+
+    background:
+        rgba(124, 255, 178, 0.12);
+}
+
+
+/* ==========================================
+   VALEURS DES CAPTEURS
+   ========================================== */
 
 .sensor-panel {
     margin-top: 20px;
