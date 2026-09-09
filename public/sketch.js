@@ -1,3 +1,10 @@
+let filteredAx = 0;
+let filteredAy = 0;
+let filteredGz = 0;
+let motionIntensity = 0;
+let previousAx = 0;
+let previousAy = 0;
+let previousGz = 0;
 let sensor;
 let particles = [];
 
@@ -169,79 +176,146 @@ function draw() {
 
 function updateSensor() {
 
-    const easing = 0.08;
+    // Filtrage des capteurs
+    const sensorSmoothing = 0.02;
+
+    // Inertie du mouvement
+    const movementSmoothing = 0.06;
+
+    // Force très faible
+    const sensitivity = 0.012;
+
+    // Filtrage
+    filteredAx = lerp(
+        filteredAx,
+        sensor.ax,
+        sensorSmoothing
+    );
+
+    filteredAy = lerp(
+        filteredAy,
+        sensor.ay,
+        sensorSmoothing
+    );
+
+    filteredGz = lerp(
+        filteredGz,
+        sensor.gz,
+        sensorSmoothing
+    );
 
 
-    /*
-        Quand l'interaction est OFF :
-        le téléphone peut continuer à envoyer
-        des données, mais elles ne déplacent
-        pas le nuage.
-    */
+    // ======================================
+    // INTENSITÉ
+    // ======================================
+
+    const deltaAx =
+        abs(filteredAx - previousAx);
+
+    const deltaAy =
+        abs(filteredAy - previousAy);
+
+    const deltaGz =
+        abs(filteredGz - previousGz);
+
+    const rawIntensity =
+        deltaAx +
+        deltaAy +
+        deltaGz * 0.1;
+
+    motionIntensity = lerp(
+        motionIntensity,
+        rawIntensity,
+        0.04
+    );
+
+    previousAx = filteredAx;
+    previousAy = filteredAy;
+    previousGz = filteredGz;
+
+
+    // ======================================
+    // OFF
+    // ======================================
 
     if (!interactionActive) {
 
         sensor.vx = 0;
         sensor.vy = 0;
 
+        // Retour progressif au centre
+        sensor.x = lerp(
+            sensor.x,
+            width / 2,
+            0.02
+        );
+
+        sensor.y = lerp(
+            sensor.y,
+            height / 2,
+            0.02
+        );
+
         return;
     }
 
 
     // ======================================
-    // Position cible
+    // FORCE
     // ======================================
 
-    const targetX =
-        width / 2 +
-        sensor.ax *
-        width *
-        0.08;
+    // Inversion des axes
+    const forceX =
+        -filteredAx * sensitivity;
+
+    const forceY =
+        -filteredAy * sensitivity;
 
 
-    const targetY =
-        height / 2 +
-        sensor.ay *
-        height *
-        0.08;
+    sensor.vx += forceX;
+    sensor.vy += forceY;
 
 
     // ======================================
-    // Lissage
+    // LISSAGE / INERTIE
     // ======================================
 
-    sensor.vx =
-        (targetX - sensor.x) *
-        easing;
+    sensor.vx = lerp(
+        sensor.vx,
+        0,
+        movementSmoothing
+    );
 
-    sensor.vy =
-        (targetY - sensor.y) *
-        easing;
+    sensor.vy = lerp(
+        sensor.vy,
+        0,
+        movementSmoothing
+    );
 
 
     sensor.x +=
         sensor.vx *
-        interactionAmount;
+        width;
 
     sensor.y +=
         sensor.vy *
-        interactionAmount;
+        height;
 
 
     // ======================================
-    // Limites
+    // LIMITES
     // ======================================
 
     sensor.x = constrain(
         sensor.x,
-        0,
-        width
+        width * 0.25,
+        width * 0.75
     );
 
     sensor.y = constrain(
         sensor.y,
-        0,
-        height
+        height * 0.25,
+        height * 0.75
     );
 }
 
@@ -272,8 +346,8 @@ function drawSensor() {
             0,
             1,
 
-            -4,
-            4
+            -1.5,
+            1.5
         );
 
 
@@ -286,8 +360,8 @@ function drawSensor() {
             0,
             1,
 
-            -4,
-            4
+            -1.5,
+            1.5 
         );
 
 
@@ -296,9 +370,9 @@ function drawSensor() {
         // ==================================
 
         const rotation =
-            sensor.gz *
-            0.002 *
-            interactionAmount;
+    filteredGz *
+    0.0005 *
+    interactionAmount;
 
 
         const currentAngle =
@@ -310,18 +384,27 @@ function drawSensor() {
         // Position
         // ==================================
 
-        const x =
-            sensor.x +
-            cos(currentAngle) *
-            p.radius +
-            driftX;
-
-
-        const y =
-            sensor.y +
-            sin(currentAngle) *
-            p.radius +
-            driftY;
+        const intensityScale =
+        1 + constrain(
+            motionIntensity * 4,
+            0,
+            0.6
+        );
+    
+    const dynamicRadius =
+        p.radius * intensityScale;
+    
+    const x =
+        sensor.x +
+        cos(currentAngle) *
+        dynamicRadius +
+        driftX;
+    
+    const y =
+        sensor.y +
+        sin(currentAngle) *
+        dynamicRadius +
+        driftY;
 
 
         // ==================================
@@ -350,12 +433,17 @@ function drawSensor() {
             );
 
 
-        const particleAlpha =
+            const particleAlpha =
             lerp(
                 p.alpha * 0.6,
                 p.alpha * 3,
                 interactionAmount
-            );
+            ) *
+            (1 + constrain(
+                motionIntensity * 8,
+                0,
+                1.5
+            ));
 
 
         fill(
@@ -366,12 +454,20 @@ function drawSensor() {
         );
 
 
-        circle(
-            x,
-            y,
-            p.size
-        );
-    }
+        const dynamicSize =
+        p.size *
+        (1 + constrain(
+            motionIntensity * 2,
+            0,
+            0.3
+        ));
+    
+    circle(
+        x,
+        y,
+        dynamicSize
+    );
+}
 }
 
 
